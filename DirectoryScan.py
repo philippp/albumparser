@@ -3,6 +3,7 @@ import stat
 import config
 import re
 
+
 def decodeDirName(path, trackGrouping):
     '''Given a directory tree entry, semantically deduce whether
     it is an album. 
@@ -28,18 +29,22 @@ def decodeDirName(path, trackGrouping):
 
 
 def cleanNameParse( cleanName ):
+    '''Attempt to infer the artist and album from a single directory name.'''
     nameParts = cleanName.split("-")
-    artistName = "-".join(nameParts[0:-1])
-    albumName = nameParts[-1:]
+    if len( nameParts ) == 1:
+        artistName = albumName = cleanName
+    else:
+        artistName = "-".join(nameParts[0:-1])
+        albumName = nameParts[-1:][0]
     return artistName, albumName
 
 def nameToParts( dirName ):
     ''' Filters unused information from a directory name and splits each name by -
     returns (cleanNameParts, sortNameParts)'''
-
-    encLabel = '(\([vV\dflac]*\))*'    #(v0) (flac) etc
-    miscLabel = '(\[.*\])*'            #square brackets [2008]
-    cleanName = re.sub(encLabel+miscLabel,'',dirName)
+    blackList = '' #regex of ignored labeling, See config.dirNameBlacklist in config.py
+    for listItem in config.dirNameBlacklist:
+        blackList += '(%s)*' % listItem
+    cleanName = re.sub(blackList,'',dirName)
     sortName = "".join(re.findall('([\d\w\-]+)',cleanName)).lower()    
     return cleanName, sortName
 
